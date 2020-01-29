@@ -3,8 +3,10 @@ package engine;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.util.ArrayList;
 
@@ -18,10 +20,8 @@ public class TaskController {
     @PostMapping(value = "/api/quizzes", consumes = "application/json", produces = "application/json")
     public Question add(@RequestBody String request) {
         try {
-            //AnnotationConfigApplicationContext context = new AnnotationConfigApplicationContext();
             ObjectMapper objectMapper = new ObjectMapper();
             Question question = objectMapper.readValue(request, Question.class);
-            //QuestionStore questionStore =  context.getBean(QuestionStore);
             QuestionStore.addQuestion(question);
             return question;
         } catch (JsonMappingException e) {
@@ -38,9 +38,25 @@ public class TaskController {
         return QuestionStore.getQuestions();
     }
 
+    @GetMapping(value = "/api/quizzes/{id}", produces = "application/json")
+    public Question getOne(@PathVariable int id) {
+        ObjectMapper objectMapper = new ObjectMapper();
+        try {
+            Question question = QuestionStore.getQuestion(id);
+            return question;
+        }
+        catch (Exception e) {
+            throw new ResponseStatusException(
+                    HttpStatus.NOT_FOUND, "entity not found"
+            );
+        }
+    }
+
     @PostMapping(value = "/api/quizzes/{id}/solve", produces = "application/json")
-    public srvResponse solve(@RequestBody String request) {
-        if (request.equals ("answer=2")) return new srvResponse(true);
+    public srvResponse solve(@RequestBody String request, @PathVariable int id) {
+        String[] split = request.split("=");
+        int userAnswer = Integer.parseInt(split[1]);
+        if (userAnswer == QuestionStore.getQuestion(id).getAnswer()) return new srvResponse(true);
         else return new srvResponse(false);
     }
 
@@ -62,12 +78,6 @@ public class TaskController {
         else return new srvResponse(false);
     }
 
-    @GetMapping(value = "/api/quizzes/{id}")
-    public Question getOne(@PathVariable int id) {
-        ObjectMapper objectMapper = new ObjectMapper();
-        Question question = QuestionStore.getQuestion(id);
-        return question;
-    }
 
     @GetMapping(path = "/api/quiz")
     public Question giveQuiz() {

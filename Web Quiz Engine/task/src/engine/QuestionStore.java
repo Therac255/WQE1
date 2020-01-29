@@ -24,11 +24,12 @@ public class QuestionStore {
 
     //@Bean
     public static Question getQuestion(int id) {
-        return questions.get(id);
+        return questions.get(id-1);
     }
 
     //@Bean
     public static void addQuestion(Question question) {
         questions.add(question);
+        question.setId(questions.size());
     }
 }
